@@ -23,8 +23,9 @@ export async function appendToSheet(values) {
     
     const result = await sheets.spreadsheets.values.append({
       spreadsheetId: process.env.SHEET_ID,
-      range: 'Clases!A:E',
+      range: 'Clases!A2:E',
       valueInputOption: 'USER_ENTERED',
+      insertDataOption: 'INSERT_ROWS',
       requestBody: {
         values: [values]
       },
@@ -43,13 +44,13 @@ export async function getMonthlyReport(month, year) {
     
     const response = await sheets.spreadsheets.values.get({
       spreadsheetId: process.env.SHEET_ID,
-      range: 'Clases!A:E',
+      range: 'Clases!A2:E',
     });
 
     const rows = response.data.values || [];
     
     return rows.reduce((acc, row) => {
-      if (!row[0]) return acc; // Ignorar filas vacías
+      if (!row[0]) return acc;
       
       const [date, student, time, price] = row;
       const rowDate = new Date(date);
@@ -59,7 +60,7 @@ export async function getMonthlyReport(month, year) {
           acc[student] = { classes: 0, total: 0 };
         }
         acc[student].classes++;
-        acc[student].total += Number(price) || 0;
+        acc[student].total += parseFloat(price) || 0;
       }
       return acc;
     }, {});

@@ -9,7 +9,10 @@ export default async function handler(req, res) {
         return res.status(400).json({ error: 'Faltan datos requeridos' });
       }
 
-      const result = await appendToSheet([date, student, time, price]);
+      // Formatear los datos en el orden correcto según las columnas de la hoja
+      const values = [date, student, time, price.toString(), ''];  // Añadimos columna vacía para notas
+
+      const result = await appendToSheet(values);
       return res.status(200).json({ 
         message: 'Clase registrada con éxito',
         result 

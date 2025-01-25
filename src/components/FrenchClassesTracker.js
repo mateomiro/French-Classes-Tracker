@@ -1,12 +1,31 @@
-import React, { useState } from 'react';
-import { Edit2, Save, Trash, User } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Edit2, Save, Trash, User, FileText } from 'lucide-react';
 
 const FrenchClassesTracker = () => {
   const [classes, setClasses] = useState([]);
   const [editingId, setEditingId] = useState(null);
   const [editForm, setEditForm] = useState({});
+  const [monthlyReport, setMonthlyReport] = useState(null);
+  const [showReport, setShowReport] = useState(false);
 
-  const addClass = (student, time) => {
+  useEffect(() => {
+    fetchMonthlyReport();
+  }, []);
+
+  const fetchMonthlyReport = async () => {
+    const currentDate = new Date();
+    try {
+      const response = await fetch(
+        `/api/classes?month=${currentDate.getMonth()}&year=${currentDate.getFullYear()}`
+      );
+      const data = await response.json();
+      setMonthlyReport(data);
+    } catch (error) {
+      console.error('Error al obtener el reporte:', error);
+    }
+  };
+
+  const addClass = async (student, time) => {
     const newClass = {
       id: Date.now(),
       student,
@@ -15,7 +34,21 @@ const FrenchClassesTracker = () => {
       price: 20,
       date: getNextWednesday(),
     };
-    setClasses([...classes, newClass]);
+
+    try {
+      await fetch('/api/classes', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(newClass),
+      });
+      
+      setClasses([...classes, newClass]);
+      fetchMonthlyReport();
+    } catch (error) {
+      console.error('Error al guardar la clase:', error);
+    }
   };
 
   const getNextWednesday = () => {
@@ -42,8 +75,31 @@ const FrenchClassesTracker = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 py-12 px-4">
       <div className="max-w-md mx-auto">
-        <h1 className="text-2xl font-semibold text-gray-800 mb-6">Clases de Francés</h1>
-        
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-2xl font-semibold text-gray-800">Clases de Francés</h1>
+          <button
+            onClick={() => setShowReport(!showReport)}
+            className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
+          >
+            <FileText className="w-4 h-4" />
+            Reporte Mensual
+          </button>
+        </div>
+
+        {showReport && monthlyReport && (
+          <div className="bg-white rounded-xl shadow-md p-4 mb-8">
+            <h2 className="text-lg font-semibold mb-4">Reporte del Mes</h2>
+            {Object.entries(monthlyReport).map(([student, data]) => (
+              <div key={student} className="border-b py-2 last:border-0">
+                <p className="font-medium">{student}</p>
+                <p className="text-sm text-gray-600">
+                  Clases: {data.classes} | Total: {data.total}€
+                </p>
+              </div>
+            ))}
+          </div>
+        )}
+
         <div className="grid grid-cols-2 gap-4 mb-8">
           <button 
             onClick={() => addClass('Katharina', '9:00-10:00')}

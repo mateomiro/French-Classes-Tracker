@@ -3,6 +3,19 @@ import { JWT } from 'google-auth-library';
 
 export async function getGoogleSheets() {
   try {
+    console.log('Iniciando conexión...');
+    
+    // Verificar que las variables de entorno estén disponibles
+    if (!process.env.GOOGLE_CLIENT_EMAIL) {
+      throw new Error('GOOGLE_CLIENT_EMAIL no está definido');
+    }
+    if (!process.env.GOOGLE_PRIVATE_KEY) {
+      throw new Error('GOOGLE_PRIVATE_KEY no está definido');
+    }
+    if (!process.env.SHEET_ID) {
+      throw new Error('SHEET_ID no está definido');
+    }
+
     const client = new JWT({
       email: process.env.GOOGLE_CLIENT_EMAIL,
       key: process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
@@ -10,15 +23,17 @@ export async function getGoogleSheets() {
     });
 
     const sheets = google.sheets({ version: 'v4', auth: client });
+    console.log('Conexión inicializada correctamente');
     return sheets;
   } catch (error) {
-    console.error('Error al inicializar Google Sheets:', error);
+    console.error('Error detallado:', error);
     throw error;
   }
 }
 
 export async function appendToSheet(values) {
   try {
+    console.log('Intentando añadir valores:', values);
     const sheets = await getGoogleSheets();
     
     const result = await sheets.spreadsheets.values.append({
@@ -31,9 +46,10 @@ export async function appendToSheet(values) {
       },
     });
 
+    console.log('Resultado:', result.data);
     return result;
   } catch (error) {
-    console.error('Error al añadir datos a la hoja:', error);
+    console.error('Error al añadir:', error.message);
     throw error;
   }
 }
